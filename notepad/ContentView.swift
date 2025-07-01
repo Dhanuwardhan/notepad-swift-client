@@ -8,14 +8,22 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var isLoggedIn: Bool = false
+    @State private var showSplash: Bool = true
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        if showSplash {
+            SplashScreenView()
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation { showSplash = false }
+                    }
+                }
+        } else if !isLoggedIn {
+            LoginView(isLoggedIn: $isLoggedIn)
+        } else {
+            HomeTabView()
         }
-        .padding()
     }
 }
 
