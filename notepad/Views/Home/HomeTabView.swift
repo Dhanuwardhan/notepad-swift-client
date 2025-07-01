@@ -16,6 +16,10 @@ struct HomeTabView: View {
         Note(title: "Ide App", content: "Buat aplikasi notepad dengan SwiftUI", color: .blue, date: Date().addingTimeInterval(-7200))
     ]
     @State private var selectedNoteID: UUID? = nil
+    @State private var showAddNote: Bool = false
+    @State private var newTitle: String = ""
+    @State private var newContent: String = ""
+    @State private var newColor: Color = .yellow
     
     private var greeting: String {
         let now = Date()
@@ -31,36 +35,72 @@ struct HomeTabView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            GreetingHeaderView(greeting: greeting)
-            if notes.isEmpty {
-                EmptyNotesView()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 20) {
-                        ForEach(notes.indices, id: \.self) { idx in
-                            NoteCardView(
-                                note: $notes[idx],
-                                isSelected: selectedNoteID == notes[idx].id,
-                                onTap: {
-                                    if !notes[idx].isCompleted {
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                            selectedNoteID = selectedNoteID == notes[idx].id ? nil : notes[idx].id
+        ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: 0) {
+                GreetingHeaderView(greeting: greeting)
+                if notes.isEmpty {
+                    EmptyNotesView()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 20) {
+                            ForEach(notes.indices, id: \.self) { idx in
+                                NoteCardView(
+                                    note: $notes[idx],
+                                    isSelected: selectedNoteID == notes[idx].id,
+                                    onTap: {
+                                        if !notes[idx].isCompleted {
+                                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                                selectedNoteID = selectedNoteID == notes[idx].id ? nil : notes[idx].id
+                                            }
                                         }
+                                    },
+                                    onComplete: {
+                                        notes[idx].isCompleted = true
+                                        selectedNoteID = nil
                                     }
-                                },
-                                onComplete: {
-                                    notes[idx].isCompleted = true
-                                    selectedNoteID = nil
-                                }
-                            )
+                                )
+                            }
                         }
+                        .padding(.vertical, 16)
                     }
-                    .padding(.vertical, 16)
                 }
             }
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            
+            // Floating Action Button
+            Button(action: { showAddNote = true }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(
+                        LinearGradient(colors: [Color.cyan, Color.blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: Color.cyan.opacity(0.3), radius: 10, x: 0, y: 6)
+            }
+            .padding(.trailing, 28)
+            .padding(.bottom, 32)
+            .accessibilityLabel("Tambah Catatan Baru")
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .sheet(isPresented: $showAddNote) {
+            AddNoteSheet(
+                newTitle: $newTitle,
+                newContent: $newContent,
+                newColor: $newColor,
+                onSave: {
+                    let note = Note(title: newTitle, content: newContent, color: newColor, date: Date())
+                    notes.insert(note, at: 0)
+                    newTitle = ""
+                    newContent = ""
+                    newColor = .yellow
+                    showAddNote = false
+                },
+                onCancel: {
+                    showAddNote = false
+                }
+            )
+        }
     }
 }
 
@@ -209,5 +249,41 @@ private extension Date {
         formatter.timeZone = TimeZone(identifier: "Asia/Jakarta")
         formatter.dateFormat = "HH:mm 'WIB'"
         return formatter.string(from: self)
+    }
+}
+
+struct AddNoteSheet: View {
+    @Binding var newTitle: String
+    @Binding var newContent: String
+    @Binding var newColor: Color
+    var onSave: () -> Void
+    var onCancel: () -> Void
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Judul")) {
+                    TextField("Judul catatan", text: $newTitle)
+                }
+                Section(header: Text("Isi")) {
+                    TextEditor(text: $newContent)
+                        .frame(height: 100)
+                }
+                Section(header: Text("Warna")) {
+                    ColorPicker("Pilih warna", selection: $newColor)
+                }
+            }
+            .navigationTitle("Catatan Baru")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Batal", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Simpan", action: onSave)
+                        .disabled(newTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
     }
 }

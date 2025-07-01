@@ -29,28 +29,20 @@ struct SplashScreenView: View {
                         .opacity(showPulse ? 0.0 : 0.8)
                         .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: false), value: showPulse)
                     
-                    // Logo utama - logo notepad asli
-                    Image("logo-notepad")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 120, height: 120)
+                    // Teks logo utama dengan animasi menarik
+                    Text("Notepad")
+                        .font(.system(size: 48, weight: .heavy, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.cyan, Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .scaleEffect(logoScale)
                         .opacity(logoOpacity)
                         .rotationEffect(.degrees(logoRotation))
-                }
-                
-                // Teks aplikasi
-                VStack(spacing: 8) {
-                    Text("Notepad")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        .opacity(textOpacity)
-                    
-                    Text("Catatan Harian Anda")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .opacity(textOpacity)
+                        .shadow(color: Color.cyan.opacity(0.4), radius: 10, x: 0, y: 8)
                 }
                 
                 Spacer()
